@@ -1,0 +1,85 @@
+<opcode 1 byte> <reg1 1 nibble> <reg2 1 nibble>
+__________Byte size operations__________
+00 MOV <reg1>, <reg2>
+01 ADD <reg1>, <reg2>
+02 SUB <reg1>, <reg2>
+03 MUL <reg1>, <reg2>
+04 DIV <reg1>, <reg2>
+05 SLL <reg1>, <reg2>
+06 SRL <reg1>, <reg2>
+07 L   <reg1>, <Ereg2>
+08 ST  <reg1>, <Ereg2>
+09 AND <reg1>, <reg2>
+0A OR  <reg1>, <reg2>
+0B XOR <reg1>, <reg2>
+0C INC <reg1>
+0D DEC <reg1>
+0E CMP <reg1>, <reg2>
+0F JMP <Ereg1>
+10 JZ  <Ereg1>
+11 JNZ <Ereg1>
+12 JG  <Ereg1>
+13 JL  <Ereg1>
+14 JGE <Ereg1>
+15 JLE <Ereg1>
+__________Word size operations__________
+16 MOV <Ereg1>, <Ereg2>
+17 ADD <Ereg1>, <Ereg2>
+18 SUB <Ereg1>, <Ereg2>
+19 MUL <Ereg1>, <Ereg2>
+1A DIV <Ereg1>, <Ereg2>
+1B SLL <Ereg1>, <Ereg2>
+1C SRL <Ereg1>, <Ereg2>
+1D L   <Ereg1>, <Ereg2>
+1E ST  <Ereg1>, <Ereg2>
+1F AND <Ereg1>, <Ereg2>
+20 OR  <Ereg1>, <Ereg2>
+21 XOR <Ereg1>, <Ereg2>
+22 INC <Ereg1>
+23 DEC <Ereg1>
+24 CMP <Ereg1>, <Ereg2>
+__________Immediate operations__________
+30 MOV <reg1>, <imm8>
+31 ADD <reg1>, <imm8>
+32 SUB <reg1>, <imm8>
+33 MUL <reg1>, <imm8>
+34 DIV <reg1>, <imm8>
+35 SLL <reg1>, <imm8>
+36 SRL <reg1>, <imm8>
+37 L   <reg1>, <imm16>
+38 ST  <reg1>, <imm16>
+39 AND <reg1>, <imm8>
+3A OR  <reg1>, <imm8>
+3B XOR <reg1>, <imm8>
+3C INC <reg1>
+3D DEC <reg1>
+3E CMP <reg1>, <imm8>
+________Word immediate operations__________
+40 MOV <Ereg1>, <imm16>
+41 ADD <Ereg1>, <imm16>
+42 SUB <Ereg1>, <imm16>
+43 MUL <Ereg1>, <imm16>
+44 DIV <Ereg1>, <imm16>
+45 SLL <Ereg1>, <imm16>
+46 SRL <Ereg1>, <imm16>
+47 L   <Ereg1>, <imm16>
+48 ST  <Ereg1>, <imm16>
+49 AND <Ereg1>, <imm16>
+4A OR  <Ereg1>, <imm16>
+4B XOR <Ereg1>, <imm16>
+4C INC <Ereg1>
+4D DEC <Ereg1>
+4E CMP <Ereg1>, <imm16>
+______STACK OPERATIONS______
+50 PUSH <reg1>
+51 POP  <reg1>
+52 PUSH <Ereg1>
+53 POP  <Ereg1>
+54 PUSH LR
+54 POP  PC
+__________CALL OPERATIONS__________
+60 B    <Ereg1>
+61 BL   <Ereg1>
+62 RT
+__________MISC OPERATIONS__________
+70 SYSCALL <imm8>
