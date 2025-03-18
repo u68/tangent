@@ -1,10 +1,3 @@
-/*
- * base.h
- *
- *  Created on: 20/07/2024
- *      Author: harma
- */
-
  #ifndef BASE_H
  #define BASE_H
  

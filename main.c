@@ -1,5 +1,6 @@
 #include "base.h"
 #include "thefont.h"
+#include "config.h"
 
 void delay(ushort after_ticks)
 {
@@ -338,19 +339,19 @@ byte menu_2(const byte* option_a, const byte* option_b)
 void set_pixel(word x, word y, byte color) {
 	word byteIndex = (y<<5) + (x >> 3);
 	byte bitIndex = x & 7;
-	deref(byteIndex + 0x9000) &= ~(0x80>>bitIndex);
-	deref(byteIndex + 0x9C00) &= ~(0x80>>bitIndex);
+	deref(byteIndex + vram1) &= ~(0x80>>bitIndex);
+	deref(byteIndex + vram2) &= ~(0x80>>bitIndex);
     if(color == 1)
     {
-    	deref(byteIndex + 0x9000) |= (0x80>>bitIndex);
+    	deref(byteIndex + vram1) |= (0x80>>bitIndex);
     }
     if(color > 1)
     {
-    	deref(byteIndex + 0x9C00) |= (0x80>>bitIndex);
+    	deref(byteIndex + vram2) |= (0x80>>bitIndex);
     }
     if(color == 3)
     {
-        deref(byteIndex + 0x9000) |= (0x80>>bitIndex);
+        deref(byteIndex + vram1) |= (0x80>>bitIndex);
     }
 }
 
@@ -429,13 +430,24 @@ void invalid_instruction()
 
 }
 
-#define vram1 = 0x9004
-#define vram2 = 0x9604
 
 void init_prog()
 {
-    derefw(0x9C00) = derefw(0x9C00) + 1306; //Next Space
-    deref(0x9C02) = deref(0x9C02) + 1; //Program Count
+    byte prog_index = 0;
+    word progs = derefw(PROGRAM_COUNT);
+    for (prog_index = 0;prog_index < 16;prog_index++)
+    {
+        if((progs >> prog_index) & 1 == 1)
+        {
+            derefw(PROGRAM_COUNT) |= 1 << prog_index;
+        }
+    }
+}
+
+void kill(word PID)
+{
+    byte prog_index = (PID - 0x9C02) / PROGRAM_SIZE;
+    derefw(PROGRAM_COUNT) &= ~(1 << prog_index);
 }
 
 void memcpy(word dest, word src, word size)
@@ -449,38 +461,48 @@ void memcpy(word dest, word src, word size)
 
 void load_from_rom(adr)
 {
-    memcpy(derefw(0x9C00),adr,1306);
-    init_prog();
+    byte prog_index = 0;
+    word progs = derefw(PROGRAM_COUNT);
+    for (prog_index = 0;prog_index < 16;prog_index++)
+    {
+        if((progs >> prog_index) & 1 == 1)
+        {
+            memcpy(prog_index*PROGRAM_SIZE+0x9C02,adr,PROGRAM_SIZE);
+            init_prog();
+        }
+    }
 }
 
 void main()
 {
     byte progs = 0;
     word PID = 0;
-    derefw(0x9C00) = 0xc04; //program address
-    deref(0x9C02) = 0; //program count
+    deref(PROGRAM_COUNT) = 0; //program count
     //init DE
     load_from_rom(/*de adr*/);
     while (1)
     {
-        for (progs = 0;progs < deref(0x9C02);progs++)
-        {  
-            PID = derefw(progs*1306+0xC04); //program * size + prog adr + prog count + vram1/2
-            exc_instruction(PID);
+        for (progs = 0;progs < 16;progs++)
+        {
+            if((derefw(PROGRAM_COUNT) >> progs) & 1 == 1)
+            {
+                PID = derefw(progs*PROGRAM_SIZE+0x9C02); //program * size + prog adr + prog count + vram1/2
+                exc_instruction(PID);
+            }
         }
     }
 }
 
 /*
 byte size registers 0-15 @ PID +4...+19
-limit ram to 256b, code to 1kb
+limit ram to b, code to 1kb
 */
 
 byte read_byte(word PID, word addr)
 {
-    if(addr < 256)
+    if(addr < RAM_SIZE)
     {
-        retrun deref(PID + 24 + addr);
+        retrun deref(PID + 10 + NUM_REGS + addr);
     } else {
         custom_break();
     }
@@ -488,9 +510,9 @@ byte read_byte(word PID, word addr)
 
 word read_word(word PID, word addr)
 {
-    if(addr < 255)
+    if(addr < RAM_SIZE)
     {
-        return derefw(PID + 24 + addr);
+        return derefw(PID + 10 + NUM_REGS + addr);
     } else {
         custom_break();
     }
@@ -498,9 +520,9 @@ word read_word(word PID, word addr)
 
 void write_byte(word PID, word addr, byte data)
 {
-    if(addr < 256)
+    if(addr < RAM_SIZE)
     {
-        deref(PID + 24 + addr) = data;
+        deref(PID + 10 + NUM_REGS + addr) = data;
     } else {
         custom_break();
     }
@@ -508,9 +530,9 @@ void write_byte(word PID, word addr, byte data)
 
 void write_word(word PID, word addr, word data)
 {
-    if(addr < 255)
+    if(addr < RAM_SIZE)
     {
-        derefw(PID + 24 + addr) = data;
+        derefw(PID + 10 + NUM_REGS + addr) = data;
     } else {
         custom_break();
     }
@@ -523,8 +545,8 @@ void exc_instruction(word PID)
     word LR = PID + 6;
     word FLAGS = derefw(PID + 8);
     word regs = PID + 10;
-    word ram = PID + 26;
-    word code = PID + 282;
+    word ram = PID + 10 + NUM_REGS;
+    word code = PID + 10 + NUM_REGS + RAM_SIZE;
     word instruction = derefw(PC)+code;
     byte opcode = (instruction & 0xFF00) >> 8;
     byte operand = instruction & 0x00FF;
@@ -1071,7 +1093,18 @@ void exc_instruction(word PID)
                 //CHECKBUTTONS
                 deref(regs + 0) = CheckButtons();
             }
+            else if(operand == 6)
+            {
+                //RENDER
+                render(derefw(regs + 0));
+            }
             break;
+        case 0xFF:
+            //break for testing instructions, do not include in code
+            while (1)
+            {
+                //do nothing
+            }
         default:
             invalid_instruction();
             break;
