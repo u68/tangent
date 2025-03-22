@@ -92,6 +92,16 @@ void render(word addr)
         }
         *((word *)(0xf800 + j)) = *((word *)(addr + i));
     }
+    j = 0;
+    for(i = 0; i < 0x0800; i++)
+    {
+        j++;
+        if((j & 0x001F) == 0x18)
+        {
+            j+=8;
+        }
+        *((word *)(0xf800 + j)) = *((word *)(addr + i + 0x600));
+    }
 }
 
 word print(const byte* str, byte x, byte y,byte color)
@@ -1096,7 +1106,7 @@ void exc_instruction(word PID)
             else if(operand == 6)
             {
                 //RENDER
-                render(derefw(regs + 0));
+                render(vram1);
             }
             break;
         case 0xFF:
