@@ -444,12 +444,13 @@ void invalid_instruction()
 void init_prog()
 {
     byte prog_index = 0;
-    word progs = derefw(PROGRAM_COUNT);
+    word progs = derefw(0x9000);
     for (prog_index = 0;prog_index < 16;prog_index++)
     {
-        if((progs >> prog_index) & 1 == 1)
+        if((((progs << prog_index) & 32768) >> 15) == 0)
         {
-            derefw(PROGRAM_COUNT) |= 1 << prog_index;
+            derefw(0x9000) |= (32768 >> prog_index);
+            break;
         }
     }
 }
@@ -469,34 +470,64 @@ void memcpy(word dest, word src, word size)
     }
 }
 
-void load_from_rom(adr)
+void load_from_rom(word adr)
 {
     byte prog_index = 0;
     word progs = derefw(PROGRAM_COUNT);
+    word prog_size = PROGRAM_SIZE;
     for (prog_index = 0;prog_index < 16;prog_index++)
     {
-        if((progs >> prog_index) & 1 == 1)
+        //deref(0x9000) = 2;
+        if(((progs << prog_index) & 32768) == 0)
         {
-            memcpy(prog_index*PROGRAM_SIZE+0x9C02,adr,PROGRAM_SIZE);
+            //deref(0x9000) = 4;
+            //custom_break();
+            memcpy((prog_index*prog_size)+0x9C02,adr,PROGRAM_SIZE);
+            derefw(0x9100) = (prog_index*prog_size)+0x9C02;
             init_prog();
+            break;
         }
     }
 }
 
 void main()
 {
-    byte progs = 0;
+    word progs = 0;
     word PID = 0;
+    word i = 0;
+
+    word prog_size = PROGRAM_SIZE;
+    word prog_count = PROGRAM_COUNT;
+    word indexer = 0;
+    word temp = 0;
+    for (i=0;i<0xEE00;i++)
+    {
+    	deref(i)=0;
+    }
     deref(PROGRAM_COUNT) = 0; //program count
     //init DE
-    load_from_rom(/*de adr*/);
+    //load_from_rom(0x5000);
+    load_from_rom(0x5000);
+    load_from_rom(0x5000);
+    load_from_rom(0x5000);
+    load_from_rom(0x5000);
+
     while (1)
     {
         for (progs = 0;progs < 16;progs++)
         {
-            if((derefw(PROGRAM_COUNT) >> progs) & 1 == 1)
+        	//derefw(0x9108) = (((derefw(prog_count) << progs) & 32768) >> 15);
+
+            if ((((derefw(prog_count) << progs) & 32768) >> 15) == 1)
             {
-                PID = derefw(progs*PROGRAM_SIZE+0x9C02); //program * size + prog adr + prog count + vram1/2
+            	indexer = 0;
+            	temp = prog_size;
+            	for (i = 0;i < progs;i++)
+            	{
+            		indexer = indexer + temp;
+            	}
+                PID = (indexer)+0x9C02; //program * size + prog adr + prog count + vram1/2
+                derefw(0x9108) = (prog_size);
                 exc_instruction(PID);
             }
         }
@@ -512,7 +543,7 @@ byte read_byte(word PID, word addr)
 {
     if(addr < RAM_SIZE)
     {
-        retrun deref(PID + 10 + NUM_REGS + addr);
+        return deref(PID + 10 + NUM_REGS + addr);
     } else {
         custom_break();
     }
@@ -557,11 +588,16 @@ void exc_instruction(word PID)
     word regs = PID + 10;
     word ram = PID + 10 + NUM_REGS;
     word code = PID + 10 + NUM_REGS + RAM_SIZE;
-    word instruction = derefw(PC)+code;
+    word instruction = derefw(derefw(PC)+code);
     byte opcode = (instruction & 0xFF00) >> 8;
     byte operand = instruction & 0x00FF;
     byte reg1 = (operand & 0xF0) >> 4;
     byte reg2 = operand & 0x0F;
+
+    derefw(0x910A) = derefw(PC)+code;
+    derefw(0x910C) = derefw(derefw(PC)+code);
+    deref(0x910E) = opcode;
+    //custom_break();
     derefw(PC) += 2;
     switch(opcode)
     {
@@ -616,11 +652,12 @@ void exc_instruction(word PID)
             break;
         case 0x0C:
             //INC
-            deref(regs + reg1)++;
+            deref(regs + reg1)+=1;
+            //deref(regs) = 0xFF;
             break;
         case 0x0D:
             //DEC
-            deref(regs + reg1)--;
+            deref(regs + reg1)-=1;
             break;
         case 0x0E:
             //CMP
@@ -909,7 +946,7 @@ void exc_instruction(word PID)
             if(deref(regs + reg1) >= deref(code + PC))
             {
                 FLAGS |= 0x08;
-            }   
+            }
             else
             {
                 FLAGS &= 0xF7;
@@ -1076,7 +1113,7 @@ void exc_instruction(word PID)
             if(operand == 0)
             {
                 //PRINT
-                print(derefw(regs + 0), deref(regs + 2), deref(regs + 3), deref(regs + 4));
+                print((const byte*)derefw(regs + 0), deref(regs + 2), deref(regs + 3), deref(regs + 4));
             }
             else if(operand == 1)
             {
@@ -1091,12 +1128,12 @@ void exc_instruction(word PID)
             else if(operand == 3)
             {
                 //MENU
-                deref(regs + 0) = menu(derefw(regs + 0), derefw(regs + 2), derefw(regs + 4), derefw(regs + 6));
+                deref(regs + 0) = menu((const byte*)derefw(regs + 0), (const byte*)derefw(regs + 2), (const byte*)derefw(regs + 4), (const byte*)derefw(regs + 6));
             }
             else if(operand == 4)
             {
                 //MENU2
-                deref(regs + 0) = menu_2(derefw(regs + 0), derefw(regs + 2));
+                deref(regs + 0) = menu_2((const byte*)derefw(regs + 0), (const byte*)derefw(regs + 2));
             }
             else if(operand == 5)
             {
@@ -1113,6 +1150,7 @@ void exc_instruction(word PID)
             //break for testing instructions, do not include in code
             while (1)
             {
+                reg1 = 0;
                 //do nothing
             }
         default:

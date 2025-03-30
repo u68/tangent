@@ -153,11 +153,12 @@ for a in lines:
     elif second.startswith('er'):
         if third.startswith('#'):
             inst = insts_imm16[first]
+        elif first in branch:
+            if first in branch:
+                inst = branch[first]
+                reg1 = second[2]
         else:
             inst = insts_16[first]if first not in stack16 else stack16[first]
-    if first in branch:
-        inst = branch[first]
-        hreg = second
     if first in stack16:
         inst = stack16[first]
     if first in syscall:
@@ -165,6 +166,10 @@ for a in lines:
         hreg = syscall_s[second]
     if first in misc:
         inst = misc[first]
+    if first == 'hex':
+        second = second.ljust((len(second) + 3) // 4 * 4, '0')
+        b = [second[i:i+4] for i in range(0, len(second), 4)]
+
     #print(a)
     b = ''
     if len(hreg) > 1:
@@ -197,6 +202,9 @@ for line in second_pass:
     final.append(line)
 with open(sys.argv[2], "wb") as f:
     for hex_str in final:
-        binary_data = bytes.fromhex(hex_str)
+        # Swap the first two characters and move them to the end of the string
+        swapped_hex_str = hex_str[2:] + hex_str[:2]
+        binary_data = bytes.fromhex(swapped_hex_str)
         f.write(binary_data)
+
 file.close()
