@@ -128,7 +128,6 @@ for a in lines:
     if first == 'define':
         defs[second] = third.replace('h', '')
 
-
     if second.startswith('r'):
         reg1 = second[1]
     else:
@@ -145,7 +144,7 @@ for a in lines:
         elif third in defs:
             hreg = defs[third]
 
-    if second.startswith('r'):
+    if second.startswith('r') and first not in syscall:
         if third.startswith('#'):
             inst = insts_imm8[first]
         else:
@@ -163,12 +162,15 @@ for a in lines:
         inst = stack16[first]
     if first in syscall:
         inst = syscall[first]
-        hreg = syscall_s[second]
+        reg1 = "0"
+        reg2 = syscall_s[second][1]
     if first in misc:
         inst = misc[first]
     if first == 'hex':
-        second = second.ljust((len(second) + 3) // 4 * 4, '0')
-        b = [second[i:i+4] for i in range(0, len(second), 4)]
+        b = [second[i:i+4].ljust(4, '0') for i in range(0, len(second), 4)]
+        for i in b:
+            first_pass.append(i)
+        continue
 
     #print(a)
     b = ''
