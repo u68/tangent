@@ -347,7 +347,7 @@ byte menu_2(const byte* option_a, const byte* option_b)
 }
 
 void set_pixel(word x, word y, byte color) {
-	word byteIndex = (y<<5) + (x >> 3);
+	word byteIndex = (y*24) + (x >> 3);
 	byte bitIndex = x & 7;
 	deref(byteIndex + vram1) &= ~(0x80>>bitIndex);
 	deref(byteIndex + vram2) &= ~(0x80>>bitIndex);
@@ -365,14 +365,22 @@ void set_pixel(word x, word y, byte color) {
     }
 }
 
-void plot_line (byte x0, byte y0, byte x1, byte y1, byte color)
+byte babs(byte in)
 {
-  word dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
-  word dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1;
-  word err = dx + dy, e2;
+    if ((in & 0x80) != 0)
+    {
+        return -in;
+    }
+    return in;
+}
+void plot_line (int x0, int y0, int x1, int y1, byte color)
+{
+  int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
+  int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1;
+  int err = dx + dy, e2;
 
   for (;;){
-    set_pixel(x0,y0,color);
+    set_pixel (x0,y0,color);
     if (x0 == x1 && y0 == y1) break;
     e2 = 2 * err;
     if (e2 >= dy) { err += dy; x0 += sx; }
@@ -483,7 +491,7 @@ void load_from_rom(word adr)
             //deref(0x9000) = 4;
             //custom_break();
             memcpy((prog_index*prog_size)+0x9C02,adr,PROGRAM_SIZE);
-            derefw(0x9100) = (prog_index*prog_size)+0x9C02;
+            //derefw(0x9100) = (prog_index*prog_size)+0x9C02;
             init_prog();
             break;
         }
@@ -504,13 +512,23 @@ void main()
     {
     	deref(i)=0;
     }
+    deref(0xf037) = 0;
+    for (i=0xF800;i<0xFFFF;i++)
+    {
+    	deref(i)=0;
+    }
+    deref(0xf037) = 4;
+    for (i=0xF800;i<0xFFFF;i++)
+    {
+    	deref(i)=0;
+    }
     deref(PROGRAM_COUNT) = 0; //program count
     //init DE
     //load_from_rom(0x5000);
     load_from_rom(0x5000);
-    load_from_rom(0x5000);
-    load_from_rom(0x5000);
-    load_from_rom(0x5000);
+    //load_from_rom(0x5000);
+    //load_from_rom(0x5000);
+    //load_from_rom(0x5000);
 
     while (1)
     {
@@ -527,7 +545,7 @@ void main()
             		indexer = indexer + temp;
             	}
                 PID = (indexer)+0x9C02; //program * size + prog adr + prog count + vram1/2
-                derefw(0x9108) = (prog_size);
+                //derefw(0x9108) = (prog_size);
                 exc_instruction(PID);
             }
         }
@@ -594,9 +612,9 @@ void exc_instruction(word PID)
     byte reg1 = (operand & 0xF0) >> 4;
     byte reg2 = operand & 0x0F;
 
-    derefw(0x910A) = derefw(PC)+code;
-    derefw(0x910C) = derefw(derefw(PC)+code);
-    deref(0x910E) = opcode;
+    //derefw(0x910A) = derefw(PC)+code;
+    //derefw(0x910C) = derefw(derefw(PC)+code);
+    //deref(0x910E) = opcode;
     //custom_break();
     derefw(PC) += 2;
     switch(opcode)
@@ -851,62 +869,62 @@ void exc_instruction(word PID)
     //IMMEDIATE OPERATIONS
         case 0x30:
             //MOV
-            deref(regs + reg1) = deref(code + PC);
+            deref(regs + reg1) = deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x31:
             //ADD
-            deref(regs + reg1) += deref(code + PC);
+            deref(regs + reg1) += deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x32:
             //SUB
-            deref(regs + reg1) -= deref(code + PC);
+            deref(regs + reg1) -= deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x33:
             //MUL
-            deref(regs + reg1) *= deref(code + PC);
+            deref(regs + reg1) *= deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x34:
             //DIV
-            deref(regs + reg1) /= deref(code + PC);
+            deref(regs + reg1) /= deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x35:
             //SLL
-            deref(regs + reg1) = deref(regs + reg1) << deref(code + PC);
+            deref(regs + reg1) = deref(regs + reg1) << deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x36:
             //SRL
-            deref(regs + reg1) = deref(regs + reg1) >> deref(code + PC);
+            deref(regs + reg1) = deref(regs + reg1) >> deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x37:
             //L
-            deref(regs + reg1) = read_byte(PID, derefw(code + PC));
+            deref(regs + reg1) = read_byte(PID, derefw(code + derefw(PC)));
             derefw(PC) += 2;
             break;
         case 0x38:
             //ST
-            write_byte(PID, derefw(code + PC), deref(regs + reg1));
+            write_byte(PID, derefw(code + derefw(PC)), deref(regs + reg1));
             derefw(PC) += 2;
             break;
         case 0x39:
             //AND
-            deref(regs + reg1) &= deref(code + PC);
+            deref(regs + reg1) &= deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x3A:
             //OR
-            deref(regs + reg1) |= deref(code + PC);
+            deref(regs + reg1) |= deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x3B:
             //XOR
-            deref(regs + reg1) ^= deref(code + PC);
+            deref(regs + reg1) ^= deref(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x3C:
@@ -919,7 +937,7 @@ void exc_instruction(word PID)
             break;
         case 0x3E:
             //CMP
-            if(deref(regs + reg1) == deref(code + PC))
+            if(deref(regs + reg1) == deref(code + derefw(PC)))
             {
                 FLAGS |= 0x01;
             }
@@ -927,7 +945,7 @@ void exc_instruction(word PID)
             {
                 FLAGS &= 0xFE;
             }
-            if(deref(regs + reg1) > deref(code + PC))
+            if(deref(regs + reg1) > deref(code + derefw(PC)))
             {
                 FLAGS |= 0x02;
             }
@@ -935,7 +953,7 @@ void exc_instruction(word PID)
             {
                 FLAGS &= 0xFD;
             }
-            if(deref(regs + reg1) < deref(code + PC))
+            if(deref(regs + reg1) < deref(code + derefw(PC)))
             {
                 FLAGS |= 0x04;
             }
@@ -943,7 +961,7 @@ void exc_instruction(word PID)
             {
                 FLAGS &= 0xFB;
             }
-            if(deref(regs + reg1) >= deref(code + PC))
+            if(deref(regs + reg1) >= deref(code + derefw(PC)))
             {
                 FLAGS |= 0x08;
             }
@@ -951,7 +969,7 @@ void exc_instruction(word PID)
             {
                 FLAGS &= 0xF7;
             }
-            if(deref(regs + reg1) <= deref(code + PC))
+            if(deref(regs + reg1) <= deref(code + derefw(PC)))
             {
                 FLAGS |= 0x10;
             }
@@ -964,62 +982,62 @@ void exc_instruction(word PID)
     //WORD IMMEADIATE OPERATIONS
         case 0x40:
             //MOV
-            derefw(regs + reg1) = derefw(code + PC);
+            derefw(regs + reg1) = derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x41:
             //ADD
-            derefw(regs + reg1) += derefw(code + PC);
+            derefw(regs + reg1) += derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x42:
             //SUB
-            derefw(regs + reg1) -= derefw(code + PC);
+            derefw(regs + reg1) -= derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x43:
             //MUL
-            derefw(regs + reg1) *= derefw(code + PC);
+            derefw(regs + reg1) *= derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x44:
             //DIV
-            derefw(regs + reg1) /= derefw(code + PC);
+            derefw(regs + reg1) /= derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x45:
             //SLL
-            derefw(regs + reg1) = derefw(regs + reg1) << derefw(code + PC);
+            derefw(regs + reg1) = derefw(regs + reg1) << derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x46:
             //SRL
-            derefw(regs + reg1) = derefw(regs + reg1) >> derefw(code + PC);
+            derefw(regs + reg1) = derefw(regs + reg1) >> derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x47:
             //L
-            read_word(PID, derefw(code + PC));
+            read_word(PID, derefw(code + derefw(PC)));
             derefw(PC) += 2;
             break;
         case 0x48:
             //ST
-            write_word(PID, derefw(code + PC), derefw(regs + reg1));
+            write_word(PID, derefw(code + derefw(PC)), derefw(regs + reg1));
             derefw(PC) += 2;
             break;
         case 0x49:
             //AND
-            derefw(regs + reg1) &= derefw(code + PC);
+            derefw(regs + reg1) &= derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x4A:
             //OR
-            derefw(regs + reg1) |= derefw(code + PC);
+            derefw(regs + reg1) |= derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x4B:
             //XOR
-            derefw(regs + reg1) ^= derefw(code + PC);
+            derefw(regs + reg1) ^= derefw(code + derefw(PC));
             derefw(PC) += 2;
             break;
         case 0x4C:
@@ -1032,7 +1050,7 @@ void exc_instruction(word PID)
             break;
         case 0x4E:
             //CMP
-            if(derefw(regs + reg1) == derefw(code + PC))
+            if(derefw(regs + reg1) == derefw(code + derefw(PC)))
             {
                 FLAGS |= 0x01;
             }
@@ -1040,7 +1058,7 @@ void exc_instruction(word PID)
             {
                 FLAGS &= 0xFE;
             }
-            if(derefw(regs + reg1) > derefw(code + PC))
+            if(derefw(regs + reg1) > derefw(code + derefw(PC)))
             {
                 FLAGS |= 0x02;
             }
@@ -1048,7 +1066,7 @@ void exc_instruction(word PID)
             {
                 FLAGS &= 0xFD;
             }
-            if(derefw(regs + reg1) < derefw(code + PC))
+            if(derefw(regs + reg1) < derefw(code + derefw(PC)))
             {
                 FLAGS |= 0x04;
             }
@@ -1056,7 +1074,7 @@ void exc_instruction(word PID)
             {
                 FLAGS &= 0xFB;
             }
-            if(derefw(regs + reg1) >= derefw(code + PC))
+            if(derefw(regs + reg1) >= derefw(code + derefw(PC)))
             {
                 FLAGS |= 0x08;
             }
@@ -1064,7 +1082,7 @@ void exc_instruction(word PID)
             {
                 FLAGS &= 0xF7;
             }
-            if(derefw(regs + reg1) <= derefw(code + PC))
+            if(derefw(regs + reg1) <= derefw(code + derefw(PC)))
             {
                 FLAGS |= 0x10;
             }
@@ -1113,12 +1131,13 @@ void exc_instruction(word PID)
             if(operand == 0)
             {
                 //PRINT
-                print((const byte*)derefw(regs + 0), deref(regs + 2), deref(regs + 3), deref(regs + 4));
+                print((const byte*)derefw(regs + 0)+code+derefw(SP), deref(regs + 2), deref(regs + 3), deref(regs + 4));
             }
             else if(operand == 1)
             {
                 //SETPIXEL
                 set_pixel(deref(regs + 0), deref(regs + 1), deref(regs + 2));
+                //custom_break();
             }
             else if(operand == 2)
             {
