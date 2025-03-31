@@ -103,6 +103,17 @@ syscall_s = {
     'check_buttons': '05',
     'render': '06',
 }
+branch_imm16 = {
+    'jmp': '80',
+    'jz': '81',
+    'jnz': '82',
+    'jg': '83',
+    'jl': '84',
+    'jge': '85',
+    'jle': '86',
+    'b': '87',
+    'bl': '88',
+}
 misc = {
     'break': 'FF',
     'rt': '62',
@@ -127,6 +138,7 @@ for a in lines:
         third = defs[third]
     if first == 'define':
         defs[second] = third.replace('h', '')
+        continue
 
     if second.startswith('r'):
         reg1 = second[1]
@@ -158,6 +170,12 @@ for a in lines:
                 reg1 = second[2]
         else:
             inst = insts_16[first]if first not in stack16 else stack16[first]
+    else:
+        if first in branch_imm16:
+            inst = branch_imm16[first]
+            first_pass.append(inst + "00")
+            first_pass.append(second.replace('\n', ''))
+            continue
     if first in stack16:
         inst = stack16[first]
     if first in syscall:
@@ -189,7 +207,9 @@ for a in lines:
 count = 0
 addresses = {}
 second_pass = []
+#print(first_pass)
 for line in first_pass:
+    #print(line + ' ' + str(count))
     if line.endswith('_address/definition_'):
         addresses[line.replace('_address/definition_', '')] = count
         continue

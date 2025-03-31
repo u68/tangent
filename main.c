@@ -1165,6 +1165,63 @@ void exc_instruction(word PID)
                 render(vram1);
             }
             break;
+    //BRANCH IMMIDIATE OPERATIONS
+        case 0x80:
+            //JMP
+            derefw(PC) = derefw(code + derefw(PC));
+            break;
+        case 0x81:
+            //JZ
+            if(FLAGS & 0x01)
+            {
+                derefw(PC) = derefw(code + derefw(PC));
+            }
+            break;
+        case 0x82:
+            //JNZ
+            if(!(FLAGS & 0x01))
+            {
+                derefw(PC) = derefw(code + derefw(PC));
+            }
+            break;
+        case 0x83:
+            //JG
+            if(FLAGS & 0x02)
+            {
+                derefw(PC) = derefw(code + derefw(PC));
+            }
+            break;
+        case 0x84:
+            //JL
+            if(FLAGS & 0x04)
+            {
+                derefw(PC) = derefw(code + derefw(PC));
+            }
+            break;
+        case 0x85:
+            //JGE
+            if(FLAGS & 0x08)
+            {
+                derefw(PC) = derefw(code + derefw(PC));
+            }
+            break;
+        case 0x86:
+            //JLE
+            if(FLAGS & 0x10)
+            {
+                derefw(PC) = derefw(code + derefw(PC));
+            }
+            break;
+        case 0x87:
+            //B
+            derefw(PC) = derefw(code + derefw(PC));
+            break;
+        case 0x88:
+            //BL
+            derefw(LR) = derefw(PC);
+            derefw(PC) = derefw(code + derefw(PC));
+            break;
+
         case 0xFF:
             //break for testing instructions, do not include in code
             while (1)
