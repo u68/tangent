@@ -1,0 +1,16 @@
+Version 0.0.1b
+_________________
+Created changelog
+Added build instructions
+Significantly optimized code
+Fixed conditionals
+Aproximate speed is around 4.5khz running this program:
+
+mov er2, #ffffh
+loop:
+inc er4
+cmp er2, er4
+bne loop
+break
+
+it takes roughly 41 seconds to complete
