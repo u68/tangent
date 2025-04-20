@@ -346,9 +346,21 @@ byte menu_2(const byte* option_a, const byte* option_b)
 	}
 }
 
-void set_pixel(word x, word y, byte color) {
+void set_pixel(byte x, byte y, byte color) {
 	word byteIndex = (y*24) + (x >> 3);
 	byte bitIndex = x & 7;
+	if (x > 191)
+	{
+		x = 191;
+	}
+	if (y > 63)
+	{
+		y = 63;
+	}
+	if (byteIndex + vram2 > 0x9c02)
+	{
+		return;
+	}
 	deref(byteIndex + vram1) &= ~(0x80>>bitIndex);
 	deref(byteIndex + vram2) &= ~(0x80>>bitIndex);
     if(color == 1)
@@ -436,14 +448,15 @@ void custom_break()
 	}
 
 }
-void invalid_instruction()
+void invalid_instruction(word opc)
 {
 	byte error[] = "BRK TRIGGERED";
-	byte message[] = "INST INVALID";
+	byte message[] = "INST INVALID: 9100";
+	derefw(0x9100) = opc;
 	while(1)
 	{
 		print(error,1,1,2);
-		print(message,1,2,1);
+		print(message,0,2,1);
 	}
 
 }
@@ -500,14 +513,13 @@ void load_from_rom(word adr)
 
 void main()
 {
-    word progs = 0;
+    byte progs = 0;
     word PID = 0;
     word i = 0;
 
     word prog_size = PROGRAM_SIZE;
     word prog_count = PROGRAM_COUNT;
-    word indexer = 0;
-    word temp = 0;
+
     for (i=0;i<0xEE00;i++)
     {
     	deref(i)=0;
@@ -525,6 +537,7 @@ void main()
     deref(PROGRAM_COUNT) = 0; //program count
     //init DE
     //load_from_rom(0x5000);
+    derefw(0x9C06) = 30;
     load_from_rom(0x5000);
     //load_from_rom(0x5000);
     //load_from_rom(0x5000);
@@ -538,13 +551,15 @@ void main()
 
             if ((((derefw(prog_count) << progs) & 32768) >> 15) == 1)
             {
-            	indexer = 0;
+            	//indexer = prog_size*progs
+            	/*indexer = 0;
             	temp = prog_size;
             	for (i = 0;i < progs;i++)
             	{
-            		indexer = indexer + temp;
+            		indexer = indexer + temp; //this was because compiler had a hard fucking time
             	}
-                PID = (indexer)+0x9C02; //program * size + prog adr + prog count + vram1/2
+            	*/
+                PID = (prog_size*progs)+0x9C02; //program * size + prog adr + prog count + vram1/2
                 //derefw(0x9108) = (prog_size);
                 exc_instruction(PID);
             }
@@ -602,7 +617,7 @@ void exc_instruction(word PID)
     word PC = PID + 2;
     word SP = PID + 4;
     word LR = PID + 6;
-    word FLAGS = derefw(PID + 8);
+    word FLAGS = PID + 8;
     word regs = PID + 10;
     word ram = PID + 10 + NUM_REGS;
     word code = PID + 10 + NUM_REGS + RAM_SIZE;
@@ -681,89 +696,89 @@ void exc_instruction(word PID)
             //CMP
             if(deref(regs + reg1) == deref(regs + reg2))
             {
-                FLAGS |= 0x01;
+                deref(FLAGS) |= 0x01;
             }
             else
             {
-                FLAGS &= 0xFE;
+                deref(FLAGS) &= 0xFE;
             }
             if(deref(regs + reg1) > deref(regs + reg2))
             {
-                FLAGS |= 0x02;
+                deref(FLAGS) |= 0x02;
             }
             else
             {
-                FLAGS &= 0xFD;
+                deref(FLAGS) &= 0xFD;
             }
             if(deref(regs + reg1) < deref(regs + reg2))
             {
-                FLAGS |= 0x04;
+                deref(FLAGS) |= 0x04;
             }
             else
             {
-                FLAGS &= 0xFB;
+                deref(FLAGS) &= 0xFB;
             }
             if(deref(regs + reg1) >= deref(regs + reg2))
             {
-                FLAGS |= 0x08;
+                deref(FLAGS) |= 0x08;
             }
             else
             {
-                FLAGS &= 0xF7;
+                deref(FLAGS) &= 0xF7;
             }
             if(deref(regs + reg1) <= deref(regs + reg2))
             {
-                FLAGS |= 0x10;
+                deref(FLAGS) |= 0x10;
             }
             else
             {
-                FLAGS &= 0xEF;
+                deref(FLAGS) &= 0xEF;
             }
             break;
         case 0x0F:
-            //JMP
-            derefw(PID) = derefw(regs + reg1);
+            //BAL
+            derefw(SP) = derefw(regs + reg1);
             break;
         case 0x10:
-            //JZ
-            if(FLAGS & 0x01)
+            //BEQ
+            if(deref(FLAGS) & 0x01)
             {
-                derefw(PID) = derefw(regs + reg1);
+                derefw(SP) = derefw(regs + reg1);
             }
             break;
         case 0x11:
-            //JNZ
-            if(!(FLAGS & 0x01))
+            //BNE
+            if(!(deref(FLAGS) & 0x01))
             {
-                derefw(PID) = derefw(regs + reg1);
+                derefw(SP) = derefw(regs + reg1);
             }
             break;
         case 0x12:
-            //JG
-            if(FLAGS & 0x02)
+            //BGT
+            if(deref(FLAGS) & 0x02)
             {
-                derefw(PID) = derefw(regs + reg1);
+                derefw(SP) = derefw(regs + reg1);
             }
             break;
         case 0x13:
-            //JL
-            if(FLAGS & 0x04)
+            //BLT
+            if(deref(FLAGS) & 0x04)
             {
-                derefw(PID) = derefw(regs + reg1);
+                derefw(SP) = derefw(regs + reg1);
             }
             break;
         case 0x14:
-            //JGE
-            if(FLAGS & 0x08)
+            //BGE
+            if(deref(FLAGS) & 0x08)
             {
-                derefw(PID) = derefw(regs + reg1);
+                derefw(SP) = derefw(regs + reg1);
             }
             break;
         case 0x15:
-            //JLE
-            if(FLAGS & 0x10)
+            //BLE
+            if(deref(FLAGS) & 0x10)
             {
-                derefw(PID) = derefw(regs + reg1);
+                derefw(SP) = derefw(regs + reg1);
             }
             break;
     //WORD SIZE OPERATIONS
@@ -827,43 +842,43 @@ void exc_instruction(word PID)
             //CMP
             if(derefw(regs + reg1) == derefw(regs + reg2))
             {
-                FLAGS |= 0x01;
+                deref(FLAGS) |= 0x01;
             }
             else
             {
-                FLAGS &= 0xFE;
+                deref(FLAGS) &= 0xFE;
             }
             if(derefw(regs + reg1) > derefw(regs + reg2))
             {
-                FLAGS |= 0x02;
+                deref(FLAGS) |= 0x02;
             }
             else
             {
-                FLAGS &= 0xFD;
+                deref(FLAGS) &= 0xFD;
             }
             if(derefw(regs + reg1) < derefw(regs + reg2))
             {
-                FLAGS |= 0x04;
+                deref(FLAGS) |= 0x04;
             }
             else
             {
-                FLAGS &= 0xFB;
+                deref(FLAGS) &= 0xFB;
             }
             if(derefw(regs + reg1) >= derefw(regs + reg2))
             {
-                FLAGS |= 0x08;
+                deref(FLAGS) |= 0x08;
             }
             else
             {
-                FLAGS &= 0xF7;
+                deref(FLAGS) &= 0xF7;
             }
             if(derefw(regs + reg1) <= derefw(regs + reg2))
             {
-                FLAGS |= 0x10;
+                deref(FLAGS) |= 0x10;
             }
             else
             {
-                FLAGS &= 0xEF;
+                deref(FLAGS) &= 0xEF;
             }
             break;
     //IMMEDIATE OPERATIONS
@@ -939,43 +954,43 @@ void exc_instruction(word PID)
             //CMP
             if(deref(regs + reg1) == deref(code + derefw(PC)))
             {
-                FLAGS |= 0x01;
+                deref(FLAGS) |= 0x01;
             }
             else
             {
-                FLAGS &= 0xFE;
+                deref(FLAGS) &= 0xFE;
             }
             if(deref(regs + reg1) > deref(code + derefw(PC)))
             {
-                FLAGS |= 0x02;
+                deref(FLAGS) |= 0x02;
             }
             else
             {
-                FLAGS &= 0xFD;
+                deref(FLAGS) &= 0xFD;
             }
             if(deref(regs + reg1) < deref(code + derefw(PC)))
             {
-                FLAGS |= 0x04;
+                deref(FLAGS) |= 0x04;
             }
             else
             {
-                FLAGS &= 0xFB;
+                deref(FLAGS) &= 0xFB;
             }
             if(deref(regs + reg1) >= deref(code + derefw(PC)))
             {
-                FLAGS |= 0x08;
+                deref(FLAGS) |= 0x08;
             }
             else
             {
-                FLAGS &= 0xF7;
+                deref(FLAGS) &= 0xF7;
             }
             if(deref(regs + reg1) <= deref(code + derefw(PC)))
             {
-                FLAGS |= 0x10;
+                deref(FLAGS) |= 0x10;
             }
             else
             {
-                FLAGS &= 0xEF;
+                deref(FLAGS) &= 0xEF;
             }
             derefw(PC) += 2;
             break;
@@ -1052,43 +1067,43 @@ void exc_instruction(word PID)
             //CMP
             if(derefw(regs + reg1) == derefw(code + derefw(PC)))
             {
-                FLAGS |= 0x01;
+                deref(FLAGS) |= 0x01;
             }
             else
             {
-                FLAGS &= 0xFE;
+                deref(FLAGS) &= 0xFE;
             }
             if(derefw(regs + reg1) > derefw(code + derefw(PC)))
             {
-                FLAGS |= 0x02;
+                deref(FLAGS) |= 0x02;
             }
             else
             {
-                FLAGS &= 0xFD;
+                deref(FLAGS) &= 0xFD;
             }
             if(derefw(regs + reg1) < derefw(code + derefw(PC)))
             {
-                FLAGS |= 0x04;
+                deref(FLAGS) |= 0x04;
             }
             else
             {
-                FLAGS &= 0xFB;
+                deref(FLAGS) &= 0xFB;
             }
             if(derefw(regs + reg1) >= derefw(code + derefw(PC)))
             {
-                FLAGS |= 0x08;
+                deref(FLAGS) |= 0x08;
             }
             else
             {
-                FLAGS &= 0xF7;
+                deref(FLAGS) &= 0xF7;
             }
             if(derefw(regs + reg1) <= derefw(code + derefw(PC)))
             {
-                FLAGS |= 0x10;
+                deref(FLAGS) |= 0x10;
             }
             else
             {
-                FLAGS &= 0xEF;
+                deref(FLAGS) &= 0xEF;
             }
             derefw(PC) += 2;
             break;
@@ -1167,47 +1182,47 @@ void exc_instruction(word PID)
             break;
     //BRANCH IMMIDIATE OPERATIONS
         case 0x80:
-            //JMP
+            //BAL
             derefw(PC) = derefw(code + derefw(PC));
             break;
         case 0x81:
-            //JZ
-            if(FLAGS & 0x01)
+            //BEQ
+            if(deref(FLAGS) & 0x01)
             {
                 derefw(PC) = derefw(code + derefw(PC));
             }
             break;
         case 0x82:
-            //JNZ
-            if(!(FLAGS & 0x01))
+            //BNE
+            if(!(deref(FLAGS) & 0x01))
             {
                 derefw(PC) = derefw(code + derefw(PC));
             }
             break;
         case 0x83:
-            //JG
-            if(FLAGS & 0x02)
+            //BGT
+            if(deref(FLAGS) & 0x02)
             {
                 derefw(PC) = derefw(code + derefw(PC));
             }
             break;
         case 0x84:
-            //JL
-            if(FLAGS & 0x04)
+            //BLT
+            if(deref(FLAGS) & 0x04)
             {
                 derefw(PC) = derefw(code + derefw(PC));
             }
             break;
         case 0x85:
-            //JGE
-            if(FLAGS & 0x08)
+            //BGE
+            if(deref(FLAGS) & 0x08)
             {
                 derefw(PC) = derefw(code + derefw(PC));
             }
             break;
         case 0x86:
-            //JLE
-            if(FLAGS & 0x10)
+            //BLE
+            if(deref(FLAGS) & 0x10)
             {
                 derefw(PC) = derefw(code + derefw(PC));
             }
@@ -1230,7 +1245,7 @@ void exc_instruction(word PID)
                 //do nothing
             }
         default:
-            invalid_instruction();
+            invalid_instruction(instruction);
             break;
     }
 }

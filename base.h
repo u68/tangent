@@ -1,17 +1,17 @@
  #ifndef BASE_H
  #define BASE_H
- 
+
  typedef unsigned char byte;
  typedef unsigned short word;
- 
- #define deref(x) (*((byte*)(x)))
- #define derefw(x) (*((word*)(x)))
+
+ #define deref(x) (*((__near byte*)(x)))
+ #define derefw(x) (*((__near word*)(x)))
  #endif
- 
+
  #define __near
- 
+
  typedef unsigned short ushort;
- 
+
  #define val(x) *((volatile __near byte *)x)
  // STPACP
  // STPACP is a write-only special function register (SFR) that is used for setting a STOP mode.
@@ -101,4 +101,3 @@
  // Although KO has 2 bytes.but only 7 bits are used. so just ignore that.
  #define KeyboardOutMask *((volatile __near byte *)0xF044)
  #define KeyboardOut *((volatile __near byte *)0xF046)
- 
