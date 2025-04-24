@@ -1,6 +1,6 @@
 # Tangent
 
-This is an operating system / kernel for *nx u8-100* devices ||Casio cwii calcs 🤫||
+This is an operating system / kernel for *nx u8-100* devices (Casio cwii calcs 🤫)
 
 Currently, it does not work or I have not been bothered to test it, BUT I am working on it little by little, I would say it will be done in about a week and a bit.
 
@@ -12,18 +12,8 @@ Have fun with it!
 
 ## Building
 
-You might think that this is some nice and easy cpp that you can throw at your computor, but you can't its for your calculator, to build it, either go through tht painful build settings of LAPIS Lexide Omega IDE, which I strongly do __NOT__ recommend, so here are all the commands:
+You might think that this is some nice and easy cpp that you can throw at your computor, but you can't, its for your calculator, to build it, either go through the painful build settings of LAPIS Lexide Omega IDE, which I strongly do __NOT__ recommend, but I supplied the auto-generated Make-File in [src](https://github.com/u68/tangent/blob/main/src/makefile) I am assuming you already have the Lexide Omega or whatever build tools already installed on your machine.
 
-```
-rasu8 -CD -ABW -SD -DF -ML -O"./" -WRPEAST -PR"main.prn" -L -NS -NR -NPL -NPW "startup.asm"
-```
+## Notes
 
-This first command I am not so sure about, because it did not show in the command output bar, and I haven't tested it out yet :p
-
-```
-ccu8 -SD -ABW -TML620909 -ML -far -Fa"./" -Ot -Oa -W1 "../main.c"
-rasu8 -CD -ABW -SD -DF -ML -O"./" -WRPEAST -PR"main.prn" -L -NS -NR -NPL -NPW "main.asm"
-rlu8 -D -SD -NS -CC -ABW  "./main.obj" "./startup.obj" ,"Calcpaint.abs",,"LU8100LW.LIB";
-CnvOHU8 -H  Calcpaint.abs  "Calcpaint.HEX";
-Ohu8.exe "/H" "Calcpaint.abs" "Calcpaint.HEX;"
-```
+I really want to thank the very smart and talented members of the [casio-calculator-hacking-community](https://discord.gg/QjGpH6rSQQ) including Xyzst, ArNeKJ, Telecomadm1145, Wav3 and any others who helped me along this journey

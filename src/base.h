@@ -1,3 +1,4 @@
+ // Credits to telecomadm1145 who made basically all of this
  #ifndef BASE_H
  #define BASE_H
 
@@ -6,7 +7,6 @@
 
  #define deref(x) (*((__near byte*)(x)))
  #define derefw(x) (*((__near word*)(x)))
- #endif
 
  #define __near
 
@@ -101,3 +101,5 @@
  // Although KO has 2 bytes.but only 7 bits are used. so just ignore that.
  #define KeyboardOutMask *((volatile __near byte *)0xF044)
  #define KeyboardOut *((volatile __near byte *)0xF046)
+ #endif
+

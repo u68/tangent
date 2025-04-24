@@ -1,3 +1,8 @@
+Version 0.0.2b
+_________________
+Organized code a whole lot better (questionable) and made some more docs
+Didn't do too much significantly
+
 Version 0.0.1b
 _________________
 Created changelog

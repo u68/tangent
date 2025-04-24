@@ -12,11 +12,11 @@ syscall render
 mov r0, #00h
 mov r3, #1fh
 mov r9, #02h //gradient
-mov r5, #0ah //y intercept
+mov r5, #05h //y intercept
 loop:
 mov r6, r0
 add r6, #a1h
-mul r6, r9
+div r6, r9
 add r6, r5
 mov r1, r3
 sub r1, r6

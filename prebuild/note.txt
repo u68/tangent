@@ -1,0 +1,1 @@
+This is to be run with CasioEmuMSVC, place this folder inside your CasioEmuMSVC models folder to run.
