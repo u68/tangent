@@ -42,8 +42,8 @@ void byte_to_nibble(byte cv2)
 
 void custom_break()
 {
-    byte error[] = "BRK TRIGGERED";
-	byte message[] = "OUT OF BOUNDS";
+    const byte error[] = "BRK TRIGGERED";
+	const byte message[] = "OUT OF BOUNDS";
 	while(1)
 	{
 		print(error,1,1,2);
@@ -53,8 +53,8 @@ void custom_break()
 }
 void invalid_instruction(word opc)
 {
-	byte error[] = "BRK TRIGGERED";
-	byte message[] = "INST INVALID: 9100";
+	const byte error[] = "BRK TRIGGERED";
+	const byte message[] = "INST INVALID: 9100";
 	derefw(0x9100) = opc;
 	while(1)
 	{
