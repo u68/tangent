@@ -199,48 +199,48 @@ void exc_instruction(word PID)
             break;
         case 0x0F:
             //BAL
-            derefw(SP) = derefw(regs + reg1);
+            derefw(PC) = derefw(regs + reg1);
             break;
         case 0x10:
             //BEQ
             if(deref(FLAGS) & 0x01)
             {
-                derefw(SP) = derefw(regs + reg1);
+                derefw(PC) = derefw(regs + reg1);
             }
             break;
         case 0x11:
             //BNE
             if(!(deref(FLAGS) & 0x01))
             {
-                derefw(SP) = derefw(regs + reg1);
+                derefw(PC) = derefw(regs + reg1);
             }
             break;
         case 0x12:
             //BGT
             if(deref(FLAGS) & 0x02)
             {
-                derefw(SP) = derefw(regs + reg1);
+                derefw(PC) = derefw(regs + reg1);
             }
             break;
         case 0x13:
             //BLT
             if(deref(FLAGS) & 0x04)
             {
-                derefw(SP) = derefw(regs + reg1);
+                derefw(PC) = derefw(regs + reg1);
             }
             break;
         case 0x14:
             //BGE
             if(deref(FLAGS) & 0x08)
             {
-                derefw(SP) = derefw(regs + reg1);
+                derefw(PC) = derefw(regs + reg1);
             }
             break;
         case 0x15:
             //BLE
             if(deref(FLAGS) & 0x10)
             {
-                derefw(SP) = derefw(regs + reg1);
+                derefw(PC) = derefw(regs + reg1);
             }
             break;
     //WORD SIZE OPERATIONS
@@ -491,7 +491,7 @@ void exc_instruction(word PID)
             if(operand == 0)
             {
                 //PRINT
-                print((const byte*)derefw(regs + 0)+code+derefw(SP), deref(regs + 2), deref(regs + 3), deref(regs + 4));
+                print((const byte*)derefw(regs + 0)+code+derefw(PC), deref(regs + 2), deref(regs + 3), deref(regs + 4));
             }
             else if(operand == 1)
             {
