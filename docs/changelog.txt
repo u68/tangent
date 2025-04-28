@@ -1,3 +1,9 @@
+Version 0.0.3b
+_________________
+Did some bug fixes because all of the bcond ern was changing sp instead of pc
+some optimizations
+forgot to write to the changelog
+
 Version 0.0.2b
 _________________
 Organized code a whole lot better (questionable) and made some more docs
