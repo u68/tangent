@@ -1,3 +1,7 @@
+Version 0.0.4b
+_________________
+Created desktop stuff and some more better stuff
+
 Version 0.0.3b
 _________________
 Did some bug fixes because all of the bcond ern was changing sp instead of pc
