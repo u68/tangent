@@ -3,6 +3,7 @@
 #include "config.h"
 #include "func_defs.h"
 #include "io.h"
+#include "desktop.h"
 
 void delay(ushort after_ticks)
 {
@@ -72,7 +73,7 @@ void main()
 
     word prog_size = PROGRAM_SIZE;
     word prog_count = PROGRAM_COUNT;
-
+    const byte test_win[] = "test";
     for (i=0;i<0xEE00;i++)
     {
     	deref(i)=0;
@@ -92,6 +93,7 @@ void main()
     //load_from_rom(0x5000);
     derefw(0x9C06) = 30;
     load_from_rom(0x5000);
+    new_win(15,15,150,40,test_win);
     //load_from_rom(0x5000);
     //load_from_rom(0x5000);
     //load_from_rom(0x5000);
